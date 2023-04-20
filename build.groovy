@@ -1,44 +1,56 @@
 pipeline {
-agent any
-options {
+  agent any
+  options {
     buildDiscarder(logRotator(numToKeepStr:'2' , artifactNumToKeepStr: '2'))
     timestamps()
     }
   stages {
-    stage('CheckOut') {
+    stage('SCM') {
       steps {
         echo 'Checking out project from Bitbucket....'
-          git branch: 'main', url: 'git@github.com:vamsi8977/nodejs_sample.git'
+        git branch: 'main', url: 'git@github.com:vamsi8977/nodejs_sample.git'
       }
     }
-stage('build') {
+    stage('Build') {
       steps {
         ansiColor('xterm') {
           echo 'NPM Build....'
-           sh '''
+          sh '''
             npm install
+            npm audit fix --force
             npm test
-            '''
+          '''
         }
       }
     }
-stage('SonarQube') {
-    steps {
+    stage('SonarQube') {
+      steps {
         withSonarQubeEnv('SonarQube') {
-            sh "sonar-scanner"
+          sh "sonar-scanner"
         }
-    }
-}
-  }//end stages
-post {
-      success {
-          archiveArtifacts artifacts: "target/*.jar"
-      }
-      failure {
-          echo "The build failed."
-      }
-      cleanup{
-        deleteDir()
       }
     }
+    stage('JFrog') {
+      steps {
+        ansiColor('xterm') {
+          sh '''
+            jf rt u test/config.json nodejs/
+            jf scan test/config.json --fail-no-op --build-name=nodejs --build-number=$BUILD_NUMBER
+          '''
+        }
+      }
+    }
+  }
+  post {
+    success {
+      archiveArtifacts artifacts: "test/config.json"
+      echo "The build passed."
+    }
+    failure {
+      echo "The build failed."
+    }
+    cleanup {
+      deleteDir()
+    }
+  }
 }
