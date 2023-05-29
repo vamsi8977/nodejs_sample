@@ -7,7 +7,6 @@ pipeline {
   stages {
     stage('SCM') {
       steps {
-        cleanWs()
         echo 'Checking out project from Bitbucket....'
         git branch: 'main', url: 'git@github.com:vamsi8977/nodejs_sample.git'
       }
@@ -44,7 +43,7 @@ pipeline {
   }
   post {
     success {
-      archiveArtifacts artifacts: "test/config.json"
+      archiveArtifacts artifacts: "out/test-results.xml"
       echo "The build passed."
     }
     failure {
