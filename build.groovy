@@ -7,6 +7,7 @@ pipeline {
   stages {
     stage('SCM') {
       steps {
+        cleanWs()
         echo 'Checking out project from Bitbucket....'
         git branch: 'main', url: 'git@github.com:vamsi8977/nodejs_sample.git'
       }
