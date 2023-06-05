@@ -1,3 +1,6 @@
+#!/usr/bin/env groovy
+@Library('shared-library') _
+
 pipeline {
   agent any
   options {
@@ -5,45 +8,29 @@ pipeline {
     timestamps()
     }
   stages {
-    stage('SCM') {
+    stage('CheckOut') {
       steps {
         echo 'Checking out project from Bitbucket....'
-        git branch: 'main', url: 'git@github.com:vamsi8977/nodejs_sample.git'
+        cleanWs()
+        checkout([
+          $class: 'GitSCM',
+          branches: [[name: 'main']],
+          userRemoteConfigs: [[url: 'git@github.com:vamsi8977/nodejs_sample.git']]
+        ])
       }
     }
     stage('Build') {
       steps {
-        ansiColor('xterm') {
-          echo 'NPM Build....'
-          sh '''
-            npm install
-            npm audit fix --force
-            npm test
-          '''
-        }
-      }
-    }
-    stage('SonarQube') {
-      steps {
-        withSonarQubeEnv('SonarQube') {
-          sh "sonar-scanner"
-        }
-      }
-    }
-    stage('JFrog') {
-      steps {
-        ansiColor('xterm') {
-          sh '''
-            jf rt u test/config.json nodejs/
-            jf scan test/config.json --fail-no-op --build-name=nodejs --build-number=$BUILD_NUMBER
-          '''
+        script {
+          withSonarQubeEnv('SonarQube') {
+            nodejs()
+          }
         }
       }
     }
   }
   post {
     success {
-      archiveArtifacts artifacts: "out/test-results.xml"
       echo "The build passed."
     }
     failure {
