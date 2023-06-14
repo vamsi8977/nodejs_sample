@@ -28,14 +28,15 @@ pipeline {
         }
       }
     }
-   stage('OWASP') {
+    stage('OWASP') {
       steps {
         script {
           def dependencyCheckArgs = [
             '-o', './',
             '-s', './',
             '-f', 'ALL',
-            '--prettyPrint'
+            '--prettyPrint',
+            '-d', './'
           ].join(' ')
           def dependencyCheckInstallation = tool 'OWASP Dependency-Check'
           withEnv(["PATH+OWASPDependencyCheck=${dependencyCheckInstallation}/bin"]) {
